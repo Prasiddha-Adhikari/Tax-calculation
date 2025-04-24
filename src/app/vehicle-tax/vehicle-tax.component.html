@@ -1,0 +1,101 @@
+<div class="max-w-3xl mx-auto mt-8 bg-white shadow-2xl rounded-2xl p-8 space-y-6 border border-gray-200">
+
+  <!-- Title + Date -->
+  <div class="flex justify-between items-center border-b pb-4">
+    <h1 class="text-2xl font-bold text-gray-800">Vehicle Tax Payable System</h1>
+    <span class="text-sm text-gray-500">📅 {{ currentDate }}</span>
+  </div>
+
+  <!-- Owner Details -->
+  <div>
+    <h2 class="text-lg font-semibold text-orange-600 mb-2 border-b border-orange-200 pb-1">Owner & Vehicle Info</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-medium text-gray-700">Owner Name</label>
+        <input type="text" [(ngModel)]="ownerName" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Year of Manufacture</label>
+        <input type="number" [(ngModel)]="yearOfManufacture" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Last Renew Date</label>
+        <input type="date" [(ngModel)]="lastRenewDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Expiry Date</label>
+        <input type="date" [(ngModel)]="expiryDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax Section -->
+  <div>
+    <h2 class="text-lg font-semibold text-orange-600 mb-2 border-b border-orange-200 pb-1">Tax Calculation</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-medium text-gray-700">Vehicle Type</label>
+        <select [(ngModel)]="vehicleType" class="form-select border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full">
+          <option value="" disabled selected>Select</option>
+          <option value="motorcycle">Motorcycle</option>
+          <option value="car">Car</option>
+          <option value="threewheeler">3-Wheeler</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Engine Capacity (cc)</label>
+        <input type="number" [(ngModel)]="engineCapacity" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+        <p class="text-xs text-gray-500 mt-1" *ngIf="getCcRange()">CC Range: {{ getCcRange() }}</p>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Province</label>
+        <select [(ngModel)]="province" class="form-select border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full">
+          <option value="" disabled selected>Select</option>
+          <option *ngFor="let p of provinces" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-gray-700">Fiscal Year</label>
+        <select [(ngModel)]="fiscalYear" class="form-select border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full">
+          <option value="" disabled selected>Select</option>
+          <option *ngFor="let year of fiscalYears" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Button -->
+  <div class="pt-4">
+    <button (click)="calculateTax()"
+      class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition">
+      💰 Calculate Tax
+    </button>
+  </div>
+
+  <!-- Result -->
+  <div *ngIf="showResults" class="bg-green-50 border border-green-200 text-green-800 rounded p-4 text-sm">
+    <h3 class="font-semibold text-lg">Details:</h3>
+    <ul class="list-inside">
+      <li><strong>Owner Name:</strong> {{ ownerName }}</li>
+      <li><strong>Vehicle Type:</strong> {{ vehicleType }}</li>
+      <li><strong>Engine Capacity:</strong> {{ engineCapacity }}cc</li>
+      <li><strong>Province:</strong> {{ province }}</li>
+      <li><strong>Fiscal Year:</strong> {{ fiscalYear }}</li>
+      <li><strong>Year of Manufacture:</strong> {{ yearOfManufacture }}</li>
+      <li><strong>Last Renew Date:</strong> {{ lastRenewDate }}</li>
+      <li><strong>Expiry Date:</strong> {{ expiryDate }}</li>
+    </ul>
+    <h3 class="font-semibold text-lg mt-4">Tax Breakdown:</h3>
+    <ul class="list-inside">
+      <li><strong>Tax:</strong> Rs. {{ taxAmount }}</li>
+      <li *ngFor="let item of fineBreakdown">
+        <strong>Missed Year:</strong> {{ item.year }} - <strong>Fine:</strong> Rs. {{ item.fine | number:'1.0-0' }}
+      </li>
+      <li><strong>Nabikaran Fine:</strong> Rs. {{ nabikaranFine }} (for missed years: {{ missedNabikaranYears.join(', ') }})</li>
+      <li class="mt-2 font-semibold"><strong>Total (incl. fine):</strong> Rs. {{ totalAmount }}</li>
+      <li><strong>Next Expiry Date:</strong> {{ nextExpiryDate }}</li>
+    </ul>
+  </div>
+</div>
