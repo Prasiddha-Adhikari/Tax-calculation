@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import BikramSambat from 'bikram-sambat-js';
 
 @Component({
   selector: 'app-vehicle-tax',
@@ -9,7 +10,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './vehicle-tax.component.html',
 })
 export class VehicleTaxComponent {
-  currentDate: string = new Date().toISOString().split('T')[0];
+  currentDate: string = this.convertToBSDate(new Date());
 
   // Form fields
   ownerName: string = '';
@@ -39,15 +40,28 @@ export class VehicleTaxComponent {
     'Lumbini', 'Karnali', 'Sudurpashchim'
   ];
 
-  nabikaranFine: number = 1000;  // Nabikaran fine amount
+  nabikaranFine: number = 200;  // Nabikaran fine amount
+
+  convertToBSDate(date: string | Date): string {
+    const bsDateString = new BikramSambat(new Date(date)).toBS(); // Get the BS date as a string
+    const [bsYear, bsMonth, bsDay] = bsDateString.split('-'); // Split the string into year, month, and day
+    
+    // Return the BS date in 'YYYY-MM-DD' format
+    return `${bsYear}-${String(Number(bsMonth)).padStart(2, '0')}-${String(Number(bsDay)).padStart(2, '0')}`;
+  }
 
   getCcRange(): string {
     if (!this.engineCapacity) return '';
     if (this.engineCapacity <= 125) return '0 - 125cc';
     else if (this.engineCapacity <= 250) return '126 - 250cc';
-    else if (this.engineCapacity <= 1000) return '251 - 1000cc';
-    else if (this.engineCapacity <= 2000) return '1001 - 2000cc';
-    else return '2000+ cc';
+    else if (this.engineCapacity <= 400) return '251 - 400cc';
+    else if (this.engineCapacity <= 650) return '401 - 650cc';
+    else if (this.engineCapacity <= 1000) return '651 - 1000cc';
+    else if (this.engineCapacity <= 1200) return '1001 - 1500cc';
+    else if (this.engineCapacity <= 1500) return '1501 - 2000cc';
+    else if (this.engineCapacity <= 2000) return '2001 - 2500cc';
+    else if (this.engineCapacity <= 3000) return '2501 - 2900cc';
+    else return 'above - 2901';
   }
 
   // Calculate the fine for late tax payment
@@ -87,7 +101,7 @@ export class VehicleTaxComponent {
     if (!this.expiryDate) return;
     const expiryDate = new Date(this.expiryDate);
     expiryDate.setFullYear(expiryDate.getFullYear() + expiredYears + 1);
-    this.nextExpiryDate = expiryDate.toISOString().split('T')[0];
+    this.nextExpiryDate = this.convertToBSDate(expiryDate);
   }
 
   // Check if Nabikaran is required based on the vehicle's manufacture year

@@ -84,8 +84,8 @@
       <li><strong>Province:</strong> {{ province }}</li>
       <li><strong>Fiscal Year:</strong> {{ fiscalYear }}</li>
       <li><strong>Year of Manufacture:</strong> {{ yearOfManufacture }}</li>
-      <li><strong>Last Renew Date:</strong> {{ lastRenewDate }}</li>
-      <li><strong>Expiry Date:</strong> {{ expiryDate }}</li>
+      <li><strong>Last Renew Date:</strong> {{ convertToBSDate(lastRenewDate) }}</li>
+      <li><strong>Expiry Date:</strong> {{ convertToBSDate(expiryDate) }}</li>
     </ul>
     <h3 class="font-semibold text-lg mt-4">Tax Breakdown:</h3>
     <ul class="list-inside">
@@ -95,7 +95,7 @@
       </li>
       <li><strong>Nabikaran Fine:</strong> Rs. {{ nabikaranFine }} (for missed years: {{ missedNabikaranYears.join(', ') }})</li>
       <li class="mt-2 font-semibold"><strong>Total (incl. fine):</strong> Rs. {{ totalAmount }}</li>
-      <li><strong>Next Expiry Date:</strong> {{ nextExpiryDate }}</li>
+      <li><strong>Next Expiry Date:</strong> {{ convertToBSDate(nextExpiryDate) }}</li>
     </ul>
   </div>
 </div>
