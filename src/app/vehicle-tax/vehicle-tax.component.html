@@ -20,12 +20,12 @@
         <input type="number" [(ngModel)]="yearOfManufacture" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
       </div>
       <div>
-        <label class="text-sm font-medium text-gray-700">Last Renew Date</label>
-        <input type="date" [(ngModel)]="lastRenewDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+        <label class="text-sm font-medium text-gray-700">Last Renew Date (BS)</label>
+        <input type="text" [(ngModel)]="lastRenewDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" placeholder="YYYY-MM-DD (BS)" />
       </div>
       <div>
-        <label class="text-sm font-medium text-gray-700">Expiry Date</label>
-        <input type="date" [(ngModel)]="expiryDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" />
+        <label class="text-sm font-medium text-gray-700">Expiry Date (BS)</label>
+        <input type="text" [(ngModel)]="expiryDate" class="form-input border-2 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 p-2 rounded-md w-full" placeholder="YYYY-MM-DD (BS)" />
       </div>
     </div>
   </div>
@@ -84,18 +84,22 @@
       <li><strong>Province:</strong> {{ province }}</li>
       <li><strong>Fiscal Year:</strong> {{ fiscalYear }}</li>
       <li><strong>Year of Manufacture:</strong> {{ yearOfManufacture }}</li>
-      <li><strong>Last Renew Date:</strong> {{ convertToBSDate(lastRenewDate) }}</li>
-      <li><strong>Expiry Date:</strong> {{ convertToBSDate(expiryDate) }}</li>
+      <li><strong>Last Renew Date (BS):</strong> {{ lastRenewDate }}</li>
+      <li><strong>Expiry Date (BS):</strong> {{ expiryDate }}</li>
     </ul>
+
     <h3 class="font-semibold text-lg mt-4">Tax Breakdown:</h3>
     <ul class="list-inside">
       <li><strong>Tax:</strong> Rs. {{ taxAmount }}</li>
       <li *ngFor="let item of fineBreakdown">
         <strong>Missed Year:</strong> {{ item.year }} - <strong>Fine:</strong> Rs. {{ item.fine | number:'1.0-0' }}
       </li>
-      <li><strong>Nabikaran Fine:</strong> Rs. {{ nabikaranFine }} (for missed years: {{ missedNabikaranYears.join(', ') }})</li>
-      <li class="mt-2 font-semibold"><strong>Total (incl. fine):</strong> Rs. {{ totalAmount }}</li>
-      <li><strong>Next Expiry Date:</strong> {{ convertToBSDate(nextExpiryDate) }}</li>
+      <li><strong>Nabikaran Fee:</strong> Rs. {{ totalNabikaranFee }} </li>
+      <li class="mt-2 font-semibold"><strong>Total (incl. fine and Nabikaran Fee):</strong> Rs. {{ totalAmount }}</li>
+      <!-- <li><strong>Next Expiry Date (BS):</strong> {{ nextExpiryDate }}</li> -->
     </ul>
   </div>
 </div>
+
+
+<!-- (for missed years: {{ missedNabikaranYears.join(', ') }}) -->
