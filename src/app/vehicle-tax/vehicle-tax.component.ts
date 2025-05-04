@@ -12,28 +12,27 @@ import BikramSambat from 'bikram-sambat-js';
 export class VehicleTaxComponent {
   currentDate: string = this.convertToBSDate(new Date());
 
-  // Form fields
-  ownerName: string = '';
+  ownerName = '';
   yearOfManufacture: number | null = null;
-  lastRenewDate: string = '';
-  expiryDate: string = '';
+  lastRenewDate = '';
+  expiryDate = '';
+  nextExpiryDate = '';
 
-  vehicleType: string = '';
+  vehicleType: 'motorcycle' | 'car' | 'threewheeler' | '' = '';
   engineCapacity: number | null = null;
-  province: string = '';
-  fiscalYear: string = '';
-  fine: number | null = null;
+  province = '';
+  fiscalYear = '';
+  fine: number = 0;
 
-  taxAmount: number | null = null;
-  totalAmount: number | null = null;
-  nextExpiryDate: string = '';
-  showResults: boolean = false;
-  requiresNabikaran: boolean = false;
+  taxAmount: number = 0;
+  totalAmount: number = 0;
+  showResults = false;
+  requiresNabikaran = false;
 
-  missedYears: number = 0;
-  fineBreakdown: { year: number, fine: number }[] = [];
+  missedYears = 0;
+  fineBreakdown: { year: number; fine: number }[] = [];
   missedNabikaranYears: number[] = [];
-  totalNabikaranFee: number = 0;
+  totalNabikaranFee = 0;
 
   fiscalYears = ['2079/80', '2080/81', '2081/82'];
   provinces = [
@@ -41,43 +40,122 @@ export class VehicleTaxComponent {
     'Lumbini', 'Karnali', 'Sudurpashchim'
   ];
 
-  // Convert AD date to BS (Bikram Sambat)
   convertToBSDate(date: string | Date): string {
     const bsDateString = new BikramSambat(new Date(date)).toBS();
     const [bsYear, bsMonth, bsDay] = bsDateString.split('-');
-    return  `${bsYear}-${String(Number(bsMonth)).padStart(2, '0')}-${String(Number(bsDay)).padStart(2, '0')}`;
+    return `${bsYear}-${String(bsMonth).padStart(2, '0')}-${String(bsDay).padStart(2, '0')}`;
   }
 
-  // Convert BS date to AD
   convertToADDate(bsDate: string): Date {
-    const [bsYear, bsMonth, bsDay] = bsDate.split('-').map(num => parseInt(num));
+    const [bsYear, bsMonth, bsDay] = bsDate.split('-').map(Number);
     const adYear = bsYear - 57;
     return new Date(adYear, bsMonth - 1, bsDay);
   }
 
   getCcRange(): string {
-    if (this.engineCapacity === null) return '';
+    if (this.engineCapacity == null) return '';
 
-    if (this.vehicleType === 'motorcycle') {
-      if (this.engineCapacity <= 125) return '0 - 125cc';
-      if (this.engineCapacity <= 250) return '126 - 250cc';
-      if (this.engineCapacity <= 400) return '251 - 400cc';
-      if (this.engineCapacity <= 650) return '401 - 650cc';
-      if (this.engineCapacity <= 1000) return '651 - 1000cc';
-      return '1001cc and above';
+    const cc = this.engineCapacity;
+    switch (this.vehicleType) {
+      case 'motorcycle':
+        if (cc <= 125) return '0 - 125cc';
+        if (cc <= 250) return '126 - 250cc';
+        if (cc <= 400) return '251 - 400cc';
+        if (cc <= 650) return '401 - 650cc';
+        if (cc <= 1000) return '651 - 1000cc';
+        return '1001cc and above';
+      case 'car':
+        if (cc <= 1000) return '0 - 1000cc';
+        if (cc <= 1500) return '1001 - 1500cc';
+        if (cc <= 2000) return '1501 - 2000cc';
+        if (cc <= 2500) return '2001 - 2500cc';
+        if (cc <= 2900) return '2501 - 2900cc';
+        return '2901cc and above';
+      case 'threewheeler':
+        return 'N/A';
+      default:
+        return '';
     }
-    if (this.vehicleType === 'car') {
-      if (this.engineCapacity <= 1000) return '0 - 1000cc';
-      if (this.engineCapacity <= 1500) return '1001 - 1500cc';
-      if (this.engineCapacity <= 2000) return '1501 - 2000cc';
-      if (this.engineCapacity <= 2500) return '2001 - 2500cc';
-      if (this.engineCapacity <= 2900) return '2501 - 2900cc';
-      return '2901cc and above';
-    }
-    if (this.vehicleType === 'threewheeler') return 'N/A';
-    return '';
   }
 
+  calculateTax() {
+    if (!this.vehicleType || this.engineCapacity == null || !this.province || !this.fiscalYear) return;
+
+    const cc = this.engineCapacity;
+    switch (this.vehicleType) {
+      case 'motorcycle':
+        this.taxAmount = cc <= 125 ? 2500 :
+                         cc <= 250 ? 4200 :
+                         cc <= 400 ? 5200 :
+                         cc <= 650 ? 8700 :
+                         cc <= 1000 ? 19700 : 29700;
+        break;
+      case 'car':
+        this.taxAmount = cc <= 1000 ? 20500 :
+                         cc <= 1500 ? 23000 :
+                         cc <= 2000 ? 25000 :
+                         cc <= 2500 ? 35000 :
+                         cc <= 2900 ? 40500 : 58000;
+        break;
+      case 'threewheeler':
+        this.taxAmount = 3500;
+        break;
+    }
+
+    const expiryAD = this.convertToADDate(this.expiryDate);
+    const now = new Date();
+
+    // If the expiry date is in the future, no fine
+    if (expiryAD > now) {
+      this.missedYears = 0;
+      this.fine = 0;
+      this.totalNabikaranFee = 0;
+      this.totalAmount = this.taxAmount;
+      this.calculateNewExpiryDate(0);
+      this.showResults = true;
+      return;
+    }
+
+    const expiredDays = Math.ceil((now.getTime() - expiryAD.getTime()) / (1000 * 3600 * 24)); // Number of days overdue
+    this.missedYears = Math.floor(expiredDays / 365); // Full years missed, to show in the breakdown
+
+    // Call calculateFine to calculate fine based on overdue days
+    this.calculateFine(expiredDays);
+    this.calculateNabikaranFee();
+    this.calculateNewExpiryDate(this.missedYears);
+
+    // Total amount includes tax, fine, and nabikaran fee
+    this.totalAmount = this.taxAmount + this.fine + this.totalNabikaranFee;
+    this.showResults = true;
+  }
+
+  calculateFine(overdueDays: number) {
+    this.fineBreakdown = [];
+    this.fine = 0;
+
+    if (!this.expiryDate || !this.taxAmount || overdueDays <= 0) return;
+
+    let fineRate = 0; // default fine rate
+
+    // Apply different fine rates based on the number of days overdue
+    if (overdueDays <= 30) {
+      fineRate = 0.05;  // 5% fine rate for 1 month
+    } else if (overdueDays <= 90) {
+      fineRate = 0.10;  // 10% fine rate for 1 to 3 months
+    } else if (overdueDays <= 180) {
+      fineRate = 0.15;  // 15% fine rate for 3 to 6 months
+    } else if (overdueDays <= 365) {
+      fineRate = 0.20;  // 20% fine rate for 6 months to 1 year
+    } else {
+      fineRate = 0.30;  // 30% fine rate for more than 1 year
+    }
+
+    const fineAmount = this.taxAmount * fineRate;
+    this.fineBreakdown.push({ year: new Date(this.expiryDate).getFullYear(), fine: fineAmount });
+
+    // Calculate total fine
+    this.fine = Math.round(fineAmount);  // Round total fine to nearest integer
+  }
 
   calculateNabikaranFee() {
     if (!this.expiryDate || !this.lastRenewDate) {
@@ -87,113 +165,56 @@ export class VehicleTaxComponent {
     }
   
     const baseNabikaranFee = 300;
-    const currentYear = new Date().getFullYear();
-    const expiryYear = new Date(this.convertToADDate(this.expiryDate)).getFullYear();
+    const expiryAD = new Date(this.convertToADDate(this.expiryDate));
+    const now = new Date();
   
-    // Track the missed Nabikaran years
+    const daysSinceExpiry = Math.ceil((now.getTime() - expiryAD.getTime()) / (1000 * 60 * 60 * 24));
+  
+    this.totalNabikaranFee = baseNabikaranFee;
     this.missedNabikaranYears = [];
   
-    // Collect the missed years for Nabikaran renewals, starting from the expiry year to the current year
+    const currentYear = now.getFullYear();
+    const expiryYear = expiryAD.getFullYear();
+  
     for (let year = expiryYear + 1; year <= currentYear; year++) {
       this.missedNabikaranYears.push(year);
     }
   
     const missedYearsCount = this.missedNabikaranYears.length;
   
-    // Start with the base fee charged for every year
-    this.totalNabikaranFee =  baseNabikaranFee; // Base fee for each year from expiry year to current year
+    if (daysSinceExpiry > 90) {
+      const penaltyPerMissedYear = baseNabikaranFee;
   
-    // Apply penalty for missed years (100% penalty = base fee added again for missed years)
-    if (missedYearsCount > 0) {
-      const penaltyPerMissedYear = baseNabikaranFee; // 100% penalty = same base fee
-      this.totalNabikaranFee += missedYearsCount * penaltyPerMissedYear;
+      if (missedYearsCount === 0) {
+        this.totalNabikaranFee += penaltyPerMissedYear;
+      } else {
+        this.totalNabikaranFee += missedYearsCount * penaltyPerMissedYear;
+      }
     }
   }
-  
-  
-  
 
-  // Calculate tax based on vehicle type and other properties
-  calculateTax() {
-    if (!this.vehicleType || this.engineCapacity === null || !this.province || !this.fiscalYear) return;
-
-    if (this.vehicleType === 'motorcycle') {
-      if (this.engineCapacity <= 125) this.taxAmount = 2500;
-      else if (this.engineCapacity <= 250) this.taxAmount = 4200;
-      else if (this.engineCapacity <= 400) this.taxAmount = 5200;
-      else if (this.engineCapacity <= 650) this.taxAmount = 8700;
-      else if (this.engineCapacity <= 1000) this.taxAmount = 19700;
-      else this.taxAmount = 29700;
-    } else if (this.vehicleType === 'car') {
-      if (this.engineCapacity <= 1000) this.taxAmount = 20500;
-      else if (this.engineCapacity <= 1500) this.taxAmount = 23000;
-      else if (this.engineCapacity <= 2000) this.taxAmount = 25000;
-      else if (this.engineCapacity <= 2500) this.taxAmount = 35000;
-      else if (this.engineCapacity <= 2900) this.taxAmount = 40500;
-      else this.taxAmount = 58000;
-    } else if (this.vehicleType === 'threewheeler') {
-      this.taxAmount = 3500;
-    }
-
-    const expiry = new Date(this.convertToADDate(this.expiryDate));
-    const now = new Date();
-    const expiredYears = now.getFullYear() - expiry.getFullYear();
-    this.missedYears = expiredYears;
-
-    // Calculate fine and update other data
-    this.calculateFine(expiredYears);
-    this.calculateNewExpiryDate(expiredYears);
-    this.calculateNabikaranFee();
-
-    // Calculate total amount including tax, fine, and Nabikaran fee
-    this.totalAmount = this.taxAmount! + (this.fine ?? 0) + this.totalNabikaranFee;
-    this.showResults = true;
-  }
-
-  // Calculate fine based on expired years and fine rates
-  calculateFine(expiredYears: number) {
-    if (!this.expiryDate || !this.taxAmount) {
-      this.fine = 0;
-      this.fineBreakdown = [];
-      return;
-    }
-
-    this.fineBreakdown = [];
-    let totalFine = 0;
-    const now = new Date();
-    const expiryDate = new Date(this.convertToADDate(this.expiryDate));
-
-    const baseFine = (daysLate: number) => {
-      if (daysLate <= 90) return 0;
-      else if (daysLate <= 120) return 0.05;
-      else if (daysLate <= 180) return 0.1;
-      else if (daysLate <= 365) return 0.2;
-      else return 0.32;
-    };
-
-    // Calculate fine for each year
-    for (let i = 1; i <= expiredYears; i++) {
-      const yearDate = new Date(expiryDate);
-      yearDate.setFullYear(yearDate.getFullYear() + i);
-
-      const daysLate = Math.ceil((now.getTime() - yearDate.getTime()) / (1000 * 3600 * 24));
-      const fineRate = baseFine(daysLate);
-      const yearFine = this.taxAmount * fineRate;
-
-      const bsYear = this.convertToBSDate(yearDate).split('-')[0]; // Just the BS year
-      this.fineBreakdown.push({ year: parseInt(bsYear), fine: yearFine });
-
-      totalFine += yearFine;
-    }
-
-    this.fine = totalFine;
-  }
-
-  // Calculate new expiry date based on expired years
   calculateNewExpiryDate(expiredYears: number) {
     if (!this.expiryDate) return;
-    const expiryDate = new Date(this.convertToADDate(this.expiryDate));
-    expiryDate.setFullYear(expiryDate.getFullYear() + expiredYears + 1);
-    this.nextExpiryDate = this.convertToBSDate(expiryDate);
+
+    const expiryAD = this.convertToADDate(this.expiryDate);
+    expiryAD.setFullYear(expiryAD.getFullYear() + expiredYears + 1);
+    this.nextExpiryDate = this.convertToBSDate(expiryAD);
+  }
+
+  // ✅ NEW: Getter for days since expiry
+  get daysSinceExpiry(): number | null {
+    if (!this.expiryDate) return null;
+
+    try {
+      const expiryAD = this.convertToADDate(this.expiryDate);
+      const today = new Date();
+
+      const diffTime = today.getTime() - expiryAD.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      return diffDays > 0 ? diffDays : 0;
+    } catch {
+      return null;
+    }
   }
 }
